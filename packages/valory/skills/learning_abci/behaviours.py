@@ -174,7 +174,7 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
         # Handle HTTP errors
         if response.status_code != HTTP_OK:
             self.context.logger.error(
-                f"Error while pulling the price from CoinGecko: {response.body}"
+                f"Error while pulling the price from CoinGecko simple: {response.body}"
             )
 
         # Load the response
@@ -191,6 +191,8 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
         # Get the specs
         specs = self.coingecko_specs.get_spec()
 
+        print(f'self.coingecko_specs:{self.coingecko_specs.get_spec()}')
+
         # Make the call
         raw_response = yield from self.get_http_response(**specs)
 
@@ -199,7 +201,7 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
 
         # Get the price
         price = response.get("usd", None)
-        self.context.logger.info(f"Got token price from Coingecko: {price}")
+        self.context.logger.info(f"Got token price from Coingecko using specs: {price}")
         return price
 
     def send_price_to_ipfs(self, price) -> Generator[None, None, Optional[str]]:
