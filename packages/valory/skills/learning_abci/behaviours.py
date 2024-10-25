@@ -52,6 +52,7 @@ from packages.valory.skills.learning_abci.payloads import (
     DataPullPayload,
     DecisionMakingPayload,
     TxPreparationPayload,
+    PingPayload
 )
 from packages.valory.skills.learning_abci.rounds import (
     DataPullRound,
@@ -60,6 +61,7 @@ from packages.valory.skills.learning_abci.rounds import (
     LearningAbciApp,
     SynchronizedData,
     TxPreparationRound,
+    PingRound
 )
 from packages.valory.skills.transaction_settlement_abci.payload_tools import (
     hash_payload_to_hex,
@@ -119,6 +121,43 @@ class LearningBaseBehaviour(BaseBehaviour, ABC):  # pylint: disable=too-many-anc
 
         return now
 
+class PingBehaviour(LearningBaseBehaviour):
+    """This behavior performs an ping call to Coingecko"""
+    
+    matching_round: Type[AbstractRound] = PingRound
+
+    def async_act(self) -> Generator:
+        with self.context.benchmark_tool.measure(self.behaviour_id).local():
+            yield from self.ping_coingecko()
+        
+        self.set_done()
+    
+    def ping_coingecko(self) -> Generator[None, None, Optional[str]]:
+        """Ping Coingecko using ApiSpecs"""
+
+        
+        with self.context.benchmark_tool.measure(self.behaviour_id).local():
+            sender = self.context.agent_address
+
+            # Get the specs
+            specs = self.coingecko_ping_specs.get_spec()
+
+            # Make the call
+            raw_response = yield from self.get_http_response(**specs)
+            
+            # Process the response
+            response = self.coingecko_ping_specs.process_response(raw_response)
+            self.context.logger.info(f"Got ping reply from Coingecko using specs: {response}")
+            
+            payload = PingPayload(sender, response)
+
+         # Send the payload to all agents and mark the behaviour as done
+        with self.context.benchmark_tool.measure(self.behaviour_id).consensus():
+            yield from self.send_a2a_transaction(payload)
+            yield from self.wait_until_round_end()
+
+        self.set_done()
+        return response
 
 class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ancestors
     """This behaviours pulls token prices from API endpoints and reads the native balance of an account"""
@@ -130,9 +169,6 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
 
         with self.context.benchmark_tool.measure(self.behaviour_id).local():
             sender = self.context.agent_address
-
-            #Ping coingecko
-            yield from self.ping_coingecko()
 
             # First mehtod to call an API: simple call to get_http_response
             price = yield from self.get_token_price_simple()
@@ -194,22 +230,6 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
 
         return price
     
-    def ping_coingecko(self) -> Generator[None, None, Optional[str]]:
-        """Ping Coingecko using ApiSpecs"""
-
-        # Get the specs
-        specs = self.coingecko_ping_specs.get_spec()
-
-        # Make the call
-        raw_response = yield from self.get_http_response(**specs)
-        
-        # Process the response
-        response = self.coingecko_ping_specs.process_response(raw_response)
-        
-        self.context.logger.info(f"Got ping reply from Coingecko using specs: {response}")
-        return response
-
-
     def get_token_price_specs(self) -> Generator[None, None, Optional[float]]:
         """Get token price from Coingecko using ApiSpecs"""
 
@@ -687,4 +707,5 @@ class LearningRoundBehaviour(AbstractRoundBehaviour):
         DataPullBehaviour,
         DecisionMakingBehaviour,
         TxPreparationBehaviour,
+        PingBehaviour
     ]
