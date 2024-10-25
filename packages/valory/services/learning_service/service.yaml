@@ -7,7 +7,7 @@ license: Apache-2.0
 fingerprint:
   README.md: bafybeid42pdrf6qrohedylj4ijrss236ai6geqgf3he44huowiuf7pl464
 fingerprint_ignore_patterns: []
-agent: valory/learning_agent:0.1.0:bafybeigmj36by2st4aerbhi5m7dyao45iwdvd4yneumyeekqdponjrshxe
+agent: valory/learning_agent:0.1.0:bafybeihnkuicfabfgkmq73bglxoc47st523vu7pahexblicx5fxgg56zwq
 number_of_agents: 4
 deployment:
   agent:
@@ -108,6 +108,18 @@ extra:
         response_type: dict
         retries: 5
         url: https://api.coingecko.com/api/v3/simple/price
+    coingecko_ping_specs:
+      args:
+        api_id: coingecko_ping
+        headers:
+          Accept: application/json
+        parameters:
+          x-cg-demo-api-key: ${COINGECKO_API_KEY:str:null}
+        method: GET
+        response_key: gecko_says
+        response_type: str
+        retries: 5
+        url: https://api.coingecko.com/api/v3/ping
 1:
   models:
     benchmark_tool:
@@ -169,6 +181,18 @@ extra:
         response_type: dict
         retries: 5
         url: https://api.coingecko.com/api/v3/simple/price
+    coingecko_ping_specs:
+      args:
+        api_id: coingecko_ping
+        headers:
+          Accept: application/json
+        parameters:
+          x-cg-demo-api-key: ${COINGECKO_API_KEY:str:null}
+        method: GET
+        response_key: gecko_says
+        response_type: str
+        retries: 5
+        url: https://api.coingecko.com/api/v3/ping
 2:
   models:
     benchmark_tool:
@@ -230,6 +254,18 @@ extra:
         response_type: dict
         retries: 5
         url: https://api.coingecko.com/api/v3/simple/price
+    coingecko_ping_specs:
+      args:
+        api_id: coingecko_ping
+        headers:
+          Accept: application/json
+        parameters:
+          x-cg-demo-api-key: ${COINGECKO_API_KEY:str:null}
+        method: GET
+        response_key: gecko_says
+        response_type: str
+        retries: 5
+        url: https://api.coingecko.com/api/v3/ping
 3:
   models:
     benchmark_tool:
@@ -286,10 +322,23 @@ extra:
         parameters:
           ids: autonolas
           vs_currencies: usd
+          x_cg_demo_api_key: ${COINGECKO_API_KEY:str:null}
         response_key: autonolas
         response_type: dict
         retries: 5
         url: https://api.coingecko.com/api/v3/simple/price
+    coingecko_ping_specs:
+      args:
+        api_id: coingecko_ping
+        headers:
+          Accept: application/json
+        parameters:
+          x-cg-demo-api-key: ${COINGECKO_API_KEY:str:null}
+        method: GET
+        response_key: gecko_says
+        response_type: str
+        retries: 5
+        url: https://api.coingecko.com/api/v3/ping
 ---
 public_id: valory/ledger:0.19.0
 type: connection

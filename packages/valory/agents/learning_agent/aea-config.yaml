@@ -32,8 +32,8 @@ protocols:
 skills:
 - valory/abstract_abci:0.1.0:bafybeidz54kvxhbdmpruzguuzzq7bjg4pekjb5amqobkxoy4oqknnobopu
 - valory/abstract_round_abci:0.1.0:bafybeiajjzuh6vf23crp55humonknirvv2f4s3dmdlfzch6tc5ow52pcgm
-- valory/learning_abci:0.1.0:bafybeicdritk2jk22jddaturczuo6wbxf5xedr4sparmb2423f4clavnny
-- valory/learning_chained_abci:0.1.0:bafybeidixpmgt44gs6mhtm4y7q544boung57dw2zqv6tkpy7ghtbm67dsm
+- valory/learning_abci:0.1.0:bafybeidzlo6ujt33ad6e73wozw4erckbl4lj5ndv5he7rfuifydnwlhmzm
+- valory/learning_chained_abci:0.1.0:bafybeighjflt6cl74cz7jscquafalekwhnqtzesda2fnc5becudbffzaqq
 - valory/registration_abci:0.1.0:bafybeiffipsowrqrkhjoexem7ern5ob4fabgif7wa6gtlszcoaop2e3oey
 - valory/reset_pause_abci:0.1.0:bafybeif4lgvbzsmzljesxbphycdv52ka7qnihyjrjpfaseclxadcmm6yiq
 - valory/termination_abci:0.1.0:bafybeiekkpo5qef5zaeagm3si6v45qxcojvtjqe4a5ceccvk4q7k3xi3bi
@@ -214,7 +214,20 @@ models:
       parameters:
         ids: autonolas
         vs_currencies: usd
+        x-cg-demo-api-key: ${str:null}
       response_key: autonolas
       response_type: dict
       retries: 5
       url: https://api.coingecko.com/api/v3/simple/price
+  coingecko_ping_specs:
+    args:
+      api_id: coingecko_ping
+      headers:
+        Accept: application/json
+      parameters:
+        x-cg-demo-api-key: ${str:null}
+      method: GET
+      response_key: gecko_says
+      response_type: str
+      retries: 5
+      url: https://api.coingecko.com/api/v3/ping

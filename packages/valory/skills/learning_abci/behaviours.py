@@ -44,6 +44,7 @@ from packages.valory.skills.abstract_round_abci.behaviours import (
 from packages.valory.skills.abstract_round_abci.io_.store import SupportedFiletype
 from packages.valory.skills.learning_abci.models import (
     CoingeckoSpecs,
+    CoingeckoPingSpecs,
     Params,
     SharedState,
 )
@@ -99,6 +100,11 @@ class LearningBaseBehaviour(BaseBehaviour, ABC):  # pylint: disable=too-many-anc
     def coingecko_specs(self) -> CoingeckoSpecs:
         """Get the Coingecko api specs."""
         return self.context.coingecko_specs
+    
+    @property
+    def coingecko_ping_specs(self) -> CoingeckoPingSpecs:
+        """Get the Coingecko api specs for Ping call."""
+        return self.context.coingecko_ping_specs
 
     @property
     def metadata_filepath(self) -> str:
@@ -124,6 +130,9 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
 
         with self.context.benchmark_tool.measure(self.behaviour_id).local():
             sender = self.context.agent_address
+
+            #Ping coingecko
+            yield from self.ping_coingecko()
 
             # First mehtod to call an API: simple call to get_http_response
             price = yield from self.get_token_price_simple()
@@ -184,6 +193,22 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
         self.context.logger.info(f"Got token price from Coingecko: {price}")
 
         return price
+    
+    def ping_coingecko(self) -> Generator[None, None, Optional[str]]:
+        """Ping Coingecko using ApiSpecs"""
+
+        # Get the specs
+        specs = self.coingecko_ping_specs.get_spec()
+
+        # Make the call
+        raw_response = yield from self.get_http_response(**specs)
+        
+        # Process the response
+        response = self.coingecko_ping_specs.process_response(raw_response)
+        
+        self.context.logger.info(f"Got ping reply from Coingecko using specs: {response}")
+        return response
+
 
     def get_token_price_specs(self) -> Generator[None, None, Optional[float]]:
         """Get token price from Coingecko using ApiSpecs"""
