@@ -128,36 +128,54 @@ class PingBehaviour(LearningBaseBehaviour):
 
     def async_act(self) -> Generator:
         with self.context.benchmark_tool.measure(self.behaviour_id).local():
-            yield from self.ping_coingecko()
-        
-        self.set_done()
-    
-    def ping_coingecko(self) -> Generator[None, None, Optional[str]]:
-        """Ping Coingecko using ApiSpecs"""
-
-        
-        with self.context.benchmark_tool.measure(self.behaviour_id).local():
             sender = self.context.agent_address
 
-            # Get the specs
-            specs = self.coingecko_ping_specs.get_spec()
+            ping_message = yield from self.ping_coingecko()
+            message_hash = yield from self.send_message_to_ipfs(ping_message)
+            message_from_ipfs = yield from self.get_message_from_ipfs(message_hash)
 
-            # Make the call
-            raw_response = yield from self.get_http_response(**specs)
-            
-            # Process the response
-            response = self.coingecko_ping_specs.process_response(raw_response)
-            self.context.logger.info(f"Got ping reply from Coingecko using specs: {response}")
-            
-            payload = PingPayload(sender, response)
-
-         # Send the payload to all agents and mark the behaviour as done
+            payload = PingPayload(sender, message_from_ipfs)
+        
+        # Send the payload to all agents and mark the behaviour as done
         with self.context.benchmark_tool.measure(self.behaviour_id).consensus():
             yield from self.send_a2a_transaction(payload)
             yield from self.wait_until_round_end()
 
         self.set_done()
+    
+    def ping_coingecko(self) -> Generator[None, None, Optional[str]]:
+        """Ping Coingecko using ApiSpecs"""
+
+        # Get the specs
+        specs = self.coingecko_ping_specs.get_spec()
+
+        # Make the call
+        raw_response = yield from self.get_http_response(**specs)
+        
+        # Process the response
+        response = self.coingecko_ping_specs.process_response(raw_response)
+        self.context.logger.info(f"Got ping reply from Coingecko using specs: {response}")
+        
         return response
+
+    def send_message_to_ipfs(self, message) -> Generator[None, None, Optional[str]]:
+        """Store the ping message in IPFS"""
+        data = {"ping_message": message}
+        message_ipfs_hash = yield from self.send_to_ipfs(
+            filename=self.metadata_filepath, obj=data, filetype=SupportedFiletype.JSON
+        )
+        self.context.logger.info(
+            f"Ping Message stored in IPFS: https://gateway.autonolas.tech/ipfs/{message_ipfs_hash}"
+        )
+        return message_ipfs_hash
+    
+    def get_message_from_ipfs(self, message_ipfs_hash) -> Generator[None, None, Optional[str]]:
+        """Load the message from IPFS"""        
+        message = yield from self.get_from_ipfs(
+            ipfs_hash=message_ipfs_hash, filetype=SupportedFiletype.JSON
+        )
+        self.context.logger.error(f"Got message from IPFS: {message}")
+        return message["ping_message"]
 
 class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ancestors
     """This behaviours pulls token prices from API endpoints and reads the native balance of an account"""
