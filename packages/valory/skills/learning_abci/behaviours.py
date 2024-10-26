@@ -44,6 +44,7 @@ from packages.valory.skills.abstract_round_abci.behaviours import (
 from packages.valory.skills.abstract_round_abci.io_.store import SupportedFiletype
 from packages.valory.skills.learning_abci.models import (
     CoingeckoSpecs,
+    CoingeckoPingSpecs,
     Params,
     SharedState,
 )
@@ -51,6 +52,7 @@ from packages.valory.skills.learning_abci.payloads import (
     DataPullPayload,
     DecisionMakingPayload,
     TxPreparationPayload,
+    PingPayload
 )
 from packages.valory.skills.learning_abci.rounds import (
     DataPullRound,
@@ -59,6 +61,7 @@ from packages.valory.skills.learning_abci.rounds import (
     LearningAbciApp,
     SynchronizedData,
     TxPreparationRound,
+    PingRound
 )
 from packages.valory.skills.transaction_settlement_abci.payload_tools import (
     hash_payload_to_hex,
@@ -99,6 +102,11 @@ class LearningBaseBehaviour(BaseBehaviour, ABC):  # pylint: disable=too-many-anc
     def coingecko_specs(self) -> CoingeckoSpecs:
         """Get the Coingecko api specs."""
         return self.context.coingecko_specs
+    
+    @property
+    def coingecko_ping_specs(self) -> CoingeckoPingSpecs:
+        """Get the Coingecko api specs for Ping call."""
+        return self.context.coingecko_ping_specs
 
     @property
     def metadata_filepath(self) -> str:
@@ -113,6 +121,61 @@ class LearningBaseBehaviour(BaseBehaviour, ABC):  # pylint: disable=too-many-anc
 
         return now
 
+class PingBehaviour(LearningBaseBehaviour):
+    """This behavior performs an ping call to Coingecko"""
+    
+    matching_round: Type[AbstractRound] = PingRound
+
+    def async_act(self) -> Generator:
+        with self.context.benchmark_tool.measure(self.behaviour_id).local():
+            sender = self.context.agent_address
+
+            ping_message = yield from self.ping_coingecko()
+            message_hash = yield from self.send_message_to_ipfs(ping_message)
+            message_from_ipfs = yield from self.get_message_from_ipfs(message_hash)
+
+            payload = PingPayload(sender, message_from_ipfs)
+        
+        # Send the payload to all agents and mark the behaviour as done
+        with self.context.benchmark_tool.measure(self.behaviour_id).consensus():
+            yield from self.send_a2a_transaction(payload)
+            yield from self.wait_until_round_end()
+
+        self.set_done()
+    
+    def ping_coingecko(self) -> Generator[None, None, Optional[str]]:
+        """Ping Coingecko using ApiSpecs"""
+
+        # Get the specs
+        specs = self.coingecko_ping_specs.get_spec()
+
+        # Make the call
+        raw_response = yield from self.get_http_response(**specs)
+        
+        # Process the response
+        response = self.coingecko_ping_specs.process_response(raw_response)
+        self.context.logger.info(f"Got ping reply from Coingecko using specs: {response}")
+        
+        return response
+
+    def send_message_to_ipfs(self, message) -> Generator[None, None, Optional[str]]:
+        """Store the ping message in IPFS"""
+        data = {"ping_message": message}
+        message_ipfs_hash = yield from self.send_to_ipfs(
+            filename=self.metadata_filepath, obj=data, filetype=SupportedFiletype.JSON
+        )
+        self.context.logger.info(
+            f"Ping Message stored in IPFS: https://gateway.autonolas.tech/ipfs/{message_ipfs_hash}"
+        )
+        return message_ipfs_hash
+    
+    def get_message_from_ipfs(self, message_ipfs_hash) -> Generator[None, None, Optional[str]]:
+        """Load the message from IPFS"""        
+        message = yield from self.get_from_ipfs(
+            ipfs_hash=message_ipfs_hash, filetype=SupportedFiletype.JSON
+        )
+        self.context.logger.error(f"Got message from IPFS: {message}")
+        return message["ping_message"]
 
 class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ancestors
     """This behaviours pulls token prices from API endpoints and reads the native balance of an account"""
@@ -174,7 +237,7 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
         # Handle HTTP errors
         if response.status_code != HTTP_OK:
             self.context.logger.error(
-                f"Error while pulling the price from CoinGecko: {response.body}"
+                f"Error while pulling the price from CoinGecko simple: {response.body}"
             )
 
         # Load the response
@@ -184,12 +247,14 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
         self.context.logger.info(f"Got token price from Coingecko: {price}")
 
         return price
-
+    
     def get_token_price_specs(self) -> Generator[None, None, Optional[float]]:
         """Get token price from Coingecko using ApiSpecs"""
 
         # Get the specs
         specs = self.coingecko_specs.get_spec()
+
+        print(f'self.coingecko_specs:{self.coingecko_specs.get_spec()}')
 
         # Make the call
         raw_response = yield from self.get_http_response(**specs)
@@ -199,7 +264,7 @@ class DataPullBehaviour(LearningBaseBehaviour):  # pylint: disable=too-many-ance
 
         # Get the price
         price = response.get("usd", None)
-        self.context.logger.info(f"Got token price from Coingecko: {price}")
+        self.context.logger.info(f"Got token price from Coingecko using specs: {price}")
         return price
 
     def send_price_to_ipfs(self, price) -> Generator[None, None, Optional[str]]:
@@ -660,4 +725,5 @@ class LearningRoundBehaviour(AbstractRoundBehaviour):
         DataPullBehaviour,
         DecisionMakingBehaviour,
         TxPreparationBehaviour,
+        PingBehaviour
     ]

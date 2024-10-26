@@ -24,6 +24,9 @@ from typing import Optional
 
 from packages.valory.skills.abstract_round_abci.base import BaseTxPayload
 
+@dataclass(frozen=True)
+class PingPayload(BaseTxPayload):
+    msg: Optional[str] = None
 
 @dataclass(frozen=True)
 class DataPullPayload(BaseTxPayload):

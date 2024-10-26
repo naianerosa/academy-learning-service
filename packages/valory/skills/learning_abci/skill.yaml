@@ -7,13 +7,13 @@ license: Apache-2.0
 aea_version: '>=1.0.0, <2.0.0'
 fingerprint:
   __init__.py: bafybeiho3lkochqpmes4f235chq26oggmwnol3vjuvhosleoubbjirbwaq
-  behaviours.py: bafybeiaiy6sh7aqo4zzghnejv55vs43vqtpaipj5cpabx32qdjrqleeeie
+  behaviours.py: bafybeicthv7niyatr7w4zfgyiu6liirumj5mgcyjjrl4nlqdbprinr7lfy
   dialogues.py: bafybeifqjbumctlffx2xvpga2kcenezhe47qhksvgmaylyp5ypwqgfar5u
-  fsm_specification.yaml: bafybeigbbydxuqephdpatb3fp3sxnvr77bfvvo5hwjimxfpgyl32wupe64
+  fsm_specification.yaml: bafybeicb2repxv7biytsg3gtdsq42sq3vkdil4b7lntyhhtyleij6dkvxa
   handlers.py: bafybeigjadr4thz6hfpfx5abezbwnqhbxmachf4efasrn4z2vqhsqgnyvi
-  models.py: bafybeicreffhurci7jzpwvxnlo5z3a2j3vcfgkopg2gtwwxfrncbzk77ra
-  payloads.py: bafybeidc6qqnfvd7qovjatt2i2kbga7pj6epdghlzqxdhzx6b6j6p7ubvm
-  rounds.py: bafybeibcxdou2opzsof4fcnaijfdgzpaaggmucyolhegns3k4zpzvuom2i
+  models.py: bafybeibdbvyrljl7hh3psoc3txtvcq457mhxhmml7gpsi3pmaluxwoswda
+  payloads.py: bafybeidb475zf7q75buncutk3vn7uzhuig23gt7obiduztprt2rhx5rw4u
+  rounds.py: bafybeiethxeeiw3pgtapsvmpwzuc4i4wii6uiqz6fdlc575sok74bw6cpy
 fingerprint_ignore_patterns: []
 connections: []
 contracts:
@@ -147,6 +147,19 @@ models:
       retries: 5
       url: https://api.coingecko.com/api/v3/simple/price
     class_name: CoingeckoSpecs
+  coingecko_ping_specs:
+    args:
+      api_id: coingecko_ping
+      headers:
+        Accept: application/json
+      method: GET
+      parameters:
+        x-cg-demo-api-key: null
+      response_key: gecko_says
+      response_type: str
+      retries: 5
+      url: https://api.coingecko.com/api/v3/ping
+    class_name: CoingeckoPingSpecs
   requests:
     args: {}
     class_name: Requests
