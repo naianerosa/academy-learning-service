@@ -141,7 +141,7 @@ models:
       parameters:
         ids: autonolas
         vs_currencies: usd
-        x-cg-demo-api-key: null
+        x_cg_demo_api_key: null
       response_key: autonolas
       response_type: dict
       retries: 5

@@ -22,7 +22,7 @@ skills:
 - valory/registration_abci:0.1.0:bafybeiffipsowrqrkhjoexem7ern5ob4fabgif7wa6gtlszcoaop2e3oey
 - valory/reset_pause_abci:0.1.0:bafybeif4lgvbzsmzljesxbphycdv52ka7qnihyjrjpfaseclxadcmm6yiq
 - valory/termination_abci:0.1.0:bafybeiekkpo5qef5zaeagm3si6v45qxcojvtjqe4a5ceccvk4q7k3xi3bi
-- valory/learning_abci:0.1.0:bafybeiaa6g6kfmd4rnopv7tzjzsryxvmyypflzl55tvhd5bqrozp67yuz4
+- valory/learning_abci:0.1.0:bafybeifxuchkdenu37ihr3jbyn74azhz7c5jivrudn4umkml6oqorkmtfu
 - valory/transaction_settlement_abci:0.1.0:bafybeielv6eivt2z6nforq43xewl2vmpfwpdu2s2vfogobziljnwsclmlm
 behaviours:
   main:
@@ -149,7 +149,7 @@ models:
       parameters:
         ids: autonolas
         vs_currencies: usd
-        x-cg-demo-api-key: null
+        x_cg_demo_api_key: null
       response_key: autonolas
       response_type: dict
       retries: 5
