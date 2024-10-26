@@ -7,7 +7,7 @@ license: Apache-2.0
 aea_version: '>=1.0.0, <2.0.0'
 fingerprint:
   __init__.py: bafybeiho3lkochqpmes4f235chq26oggmwnol3vjuvhosleoubbjirbwaq
-  behaviours.py: bafybeihgstg4hpryzvkiavyjxh5fdabxfz7teyb4lrgrbp2rqpnqufsif4
+  behaviours.py: bafybeiapa5mdstfquqpvyyblvuqahlfxwwohkpjuwhitd22fmy43np5mcm
   dialogues.py: bafybeifqjbumctlffx2xvpga2kcenezhe47qhksvgmaylyp5ypwqgfar5u
   fsm_specification.yaml: bafybeigrichsb22koxhe4o6urtttnhxwii44stdgczmihmxsikd54gcesq
   handlers.py: bafybeigjadr4thz6hfpfx5abezbwnqhbxmachf4efasrn4z2vqhsqgnyvi
@@ -19,6 +19,7 @@ connections: []
 contracts:
 - valory/gnosis_safe:0.1.0:bafybeib375xmvcplw7ageic2np3hq4yqeijrvd5kl7rrdnyvswats6ngmm
 - valory/erc20:0.1.0:bafybeibyhuxozkkvsymqz45vxixr3w3bs4vsvxg2nsx5jlyi3f3hhn7ezi
+- valory/erc721:0.1.0:bafybeierdfpuqhrrluypc3h4uvexa7ej277pbl3cuqhsk3qst3gjt4dufi
 - valory/multisend:0.1.0:bafybeig5byt5urg2d2bsecufxe5ql7f4mezg3mekfleeh32nmuusx66p4y
 protocols:
 - valory/contract_api:1.0.0:bafybeidgu7o5llh26xp3u3ebq3yluull5lupiyeu6iooi2xyymdrgnzq5i

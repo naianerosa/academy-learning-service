@@ -26,6 +26,8 @@ from tempfile import mkdtemp
 from typing import Dict, Generator, Optional, Set, Type, cast
 
 from packages.valory.contracts.erc20.contract import ERC20
+from packages.valory.contracts.erc721.contract import ERC721
+
 from packages.valory.contracts.gnosis_safe.contract import (
     GnosisSafeContract,
     SafeOperation,
@@ -464,6 +466,10 @@ class PreTxPreparationBehaviour(
         with self.context.benchmark_tool.measure(self.behaviour_id).local():
             sender = self.context.agent_address
 
+            #Get balance from ERC21
+            balance = yield from self.get_erc721_balance()
+            self.context.logger.info(f"Balance from ERC721:{balance}")
+
             # Get the transaction hash
             tx_hash = yield from self.get_tx_hash()
 
@@ -564,6 +570,45 @@ class PreTxPreparationBehaviour(
         self.context.logger.info(f"Safe transaction hash is {safe_tx_hash}")
 
         return safe_tx_hash
+
+    def get_erc721_balance(self) -> Generator[None, None, Optional[float]]:
+        """Get ERC721 balance"""
+        self.context.logger.info(
+            f"Getting Olas balance for Safe {self.synchronized_data.safe_contract_address}"
+        )
+
+        # Use the contract api to interact with the ERC721 contract
+        response_msg = yield from self.get_contract_api_response(
+            performative=ContractApiMessage.Performative.GET_RAW_TRANSACTION,  # type: ignore
+            contract_address=self.params.olas_token_address,
+            contract_id=str(ERC721.contract_id),
+            contract_callable="check_balance",
+            account=self.synchronized_data.safe_contract_address,
+            chain_id=GNOSIS_CHAIN_ID,
+        )
+
+        # Check that the response is what we expect
+        if response_msg.performative != ContractApiMessage.Performative.RAW_TRANSACTION:
+            self.context.logger.error(
+                f"Error while retrieving the balance: {response_msg}"
+            )
+            return None
+
+        balance = response_msg.raw_transaction.body.get("token", None)
+
+        # Ensure that the balance is not None
+        if balance is None:
+            self.context.logger.error(
+                f"Error while retrieving the balance:  {response_msg}"
+            )
+            return None
+
+        balance = balance / 10**18  # from wei
+
+        self.context.logger.info(
+            f"Account {self.synchronized_data.safe_contract_address} has {balance} Olas"
+        )
+        return balance    
 
 class TxPreparationBehaviour(
     LearningBaseBehaviour
