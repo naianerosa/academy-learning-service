@@ -38,7 +38,8 @@ from packages.valory.skills.learning_abci.payloads import (
     DataPullPayload,
     DecisionMakingPayload,
     TxPreparationPayload,
-    PingPayload
+    PingPayload,
+    PreTxPreparationPayload
 )
 
 
@@ -100,14 +101,29 @@ class SynchronizedData(BaseSynchronizedData):
         return self._get_deserialized("participant_to_data_round")
 
     @property
+    def pre_most_voted_tx_hash(self) -> Optional[float]:
+        """Get the token pre_most_voted_tx_hash."""
+        return self.db.get("pre_most_voted_tx_hash", None)
+    
+    @property
     def most_voted_tx_hash(self) -> Optional[float]:
         """Get the token most_voted_tx_hash."""
         return self.db.get("most_voted_tx_hash", None)
 
     @property
+    def participant_to_pre_tx_round(self) -> DeserializedCollection:
+        """Get the participants to the pre tx round."""
+        return self._get_deserialized("participant_to_pre_tx_round")
+
+    @property
     def participant_to_tx_round(self) -> DeserializedCollection:
         """Get the participants to the tx round."""
         return self._get_deserialized("participant_to_tx_round")
+
+    @property
+    def pre_tx_submitter(self) -> str:
+        """Get the round that submitted a pre tx to transaction_settlement_abci."""
+        return str(self.db.get_strict("pre_tx_submitter"))
 
     @property
     def tx_submitter(self) -> str:
@@ -173,6 +189,21 @@ class DecisionMakingRound(CollectSameUntilThresholdRound):
     # Event.DONE, Event.ERROR, Event.TRANSACT, Event.ROUND_TIMEOUT  # this needs to be referenced for static checkers
 
 
+class PreTxPreparationRound(CollectSameUntilThresholdRound):
+    """PreTxPreparationRound"""
+
+    payload_class = PreTxPreparationPayload
+    synchronized_data_class = SynchronizedData
+    done_event = Event.DONE
+    no_majority_event = Event.NO_MAJORITY
+    collection_key = get_name(SynchronizedData.participant_to_pre_tx_round)
+    selection_key = (
+        get_name(SynchronizedData.pre_tx_submitter),
+        get_name(SynchronizedData.pre_most_voted_tx_hash),
+    )
+
+    # Event.ROUND_TIMEOUT  # this needs to be referenced for static checkers
+
 class TxPreparationRound(CollectSameUntilThresholdRound):
     """TxPreparationRound"""
 
@@ -187,7 +218,6 @@ class TxPreparationRound(CollectSameUntilThresholdRound):
     )
 
     # Event.ROUND_TIMEOUT  # this needs to be referenced for static checkers
-
 
 class FinishedDecisionMakingRound(DegenerateRound):
     """FinishedDecisionMakingRound"""
@@ -220,7 +250,12 @@ class LearningAbciApp(AbciApp[Event]):
             Event.ROUND_TIMEOUT: DecisionMakingRound,
             Event.DONE: FinishedDecisionMakingRound,
             Event.ERROR: FinishedDecisionMakingRound,
-            Event.TRANSACT: TxPreparationRound,
+            Event.TRANSACT: PreTxPreparationRound,
+        },
+        PreTxPreparationRound: {
+            Event.NO_MAJORITY: PreTxPreparationRound,
+            Event.ROUND_TIMEOUT: PreTxPreparationRound,
+            Event.DONE: TxPreparationRound,
         },
         TxPreparationRound: {
             Event.NO_MAJORITY: TxPreparationRound,

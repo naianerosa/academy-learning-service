@@ -44,6 +44,12 @@ class DecisionMakingPayload(BaseTxPayload):
 
     event: str
 
+@dataclass(frozen=True)
+class PreTxPreparationPayload(BaseTxPayload):
+    """Represent a transaction payload for the PreTxPreparationRound."""
+
+    tx_submitter: Optional[str] = None
+    tx_hash: Optional[str] = None
 
 @dataclass(frozen=True)
 class TxPreparationPayload(BaseTxPayload):
