@@ -651,24 +651,23 @@ class TxPreparationBehaviour(
         last_number = int(str(now)[-1])
 
         # Native transaction (Safe -> recipient)
-        if last_number in [0, 1, 2]:
+        if last_number in [0, 1]:
             self.context.logger.info("Preparing a native transaction")
             tx_hash = yield from self.get_native_transfer_safe_tx_hash()
             return tx_hash
 
         # ERC20 transaction (Safe -> recipient)
-        if last_number in [3, 4, 5]:
+        if last_number in [2, 3]:
             self.context.logger.info("Preparing an ERC20 transaction")
             tx_hash = yield from self.get_contract_transfer_safe_tx_hash(str(ERC20.contract_id))
             return tx_hash
     
         # ERC721 transaction (Safe -> recipient)
-        if last_number in [6, 7, 8]:
+        if last_number in [4, 5]:
             self.context.logger.info("Preparing an ERC721 transaction")
             tx_hash = yield from self.get_contract_transfer_safe_tx_hash(str(ERC721.contract_id))
             return tx_hash
-
-        # Multisend transaction (both native and ERC20) (Safe -> recipient)
+        
         self.context.logger.info("Preparing a multisend transaction")
         tx_hash = yield from self.get_multisend_safe_tx_hash()
         return tx_hash
@@ -770,7 +769,7 @@ class TxPreparationBehaviour(
         )
 
         # ERC20 transfer
-        erc20_transfer_data_hex = yield from self.get_erc20_transfer_data()
+        erc20_transfer_data_hex = yield from self.get_contract_transfer_data(str(ERC20.contract_id))
 
         if erc20_transfer_data_hex is None:
             return None
@@ -781,6 +780,21 @@ class TxPreparationBehaviour(
                 "to": self.params.olas_token_address,
                 "value": ZERO_VALUE,
                 "data": bytes.fromhex(erc20_transfer_data_hex),
+            }
+        )
+
+        # ERC721 transfer
+        erc721_transfer_data_hex = yield from self.get_contract_transfer_data(str(ERC721.contract_id))
+
+        if erc721_transfer_data_hex is None:
+            return None
+
+        multi_send_txs.append(
+            {
+                "operation": MultiSendOperation.CALL,
+                "to": self.params.olas_token_address,
+                "value": ZERO_VALUE,
+                "data": bytes.fromhex(erc721_transfer_data_hex),
             }
         )
 
