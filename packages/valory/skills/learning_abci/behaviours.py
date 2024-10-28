@@ -651,18 +651,23 @@ class TxPreparationBehaviour(
         last_number = int(str(now)[-1])
 
         # Native transaction (Safe -> recipient)
-        if last_number in [0, 1, 2, 3]:
+        if last_number in [0, 1]:
             self.context.logger.info("Preparing a native transaction")
             tx_hash = yield from self.get_native_transfer_safe_tx_hash()
             return tx_hash
 
         # ERC20 transaction (Safe -> recipient)
-        if last_number in [4, 5, 6]:
+        if last_number in [2, 3]:
             self.context.logger.info("Preparing an ERC20 transaction")
-            tx_hash = yield from self.get_erc20_transfer_safe_tx_hash()
+            tx_hash = yield from self.get_contract_transfer_safe_tx_hash(str(ERC20.contract_id))
             return tx_hash
-
-        # Multisend transaction (both native and ERC20) (Safe -> recipient)
+    
+        # ERC721 transaction (Safe -> recipient)
+        if last_number in [4, 5]:
+            self.context.logger.info("Preparing an ERC721 transaction")
+            tx_hash = yield from self.get_contract_transfer_safe_tx_hash(str(ERC721.contract_id))
+            return tx_hash
+        
         self.context.logger.info("Preparing a multisend transaction")
         tx_hash = yield from self.get_multisend_safe_tx_hash()
         return tx_hash
@@ -687,11 +692,11 @@ class TxPreparationBehaviour(
         self.context.logger.info(f"Native transfer data is {data}")
         return data
 
-    def get_erc20_transfer_safe_tx_hash(self) -> Generator[None, None, Optional[str]]:
-        """Prepare an ERC20 safe transaction"""
+    def get_contract_transfer_safe_tx_hash(self, contract_id:str) -> Generator[None, None, Optional[str]]:
+        """Prepare an contract safe transaction"""
 
         # Transaction data
-        data_hex = yield from self.get_erc20_transfer_data()
+        data_hex = yield from self.get_contract_transfer_data(contract_id)
 
         # Check for errors
         if data_hex is None:
@@ -702,20 +707,20 @@ class TxPreparationBehaviour(
             to_address=self.params.transfer_target_address, data=bytes.fromhex(data_hex)
         )
 
-        self.context.logger.info(f"ERC20 transfer hash is {safe_tx_hash}")
+        self.context.logger.info(f"contract transfer hash is {safe_tx_hash}")
 
         return safe_tx_hash
 
-    def get_erc20_transfer_data(self) -> Generator[None, None, Optional[str]]:
-        """Get the ERC20 transaction data"""
+    def get_contract_transfer_data(self, contract_id:str) -> Generator[None, None, Optional[str]]:
+        """Get the contract transaction data"""
 
-        self.context.logger.info("Preparing ERC20 transfer transaction")
+        self.context.logger.info("Preparing contract transfer transaction")
 
         # Use the contract api to interact with the ERC20 contract
         response_msg = yield from self.get_contract_api_response(
             performative=ContractApiMessage.Performative.GET_RAW_TRANSACTION,  # type: ignore
             contract_address=self.params.olas_token_address,
-            contract_id=str(ERC20.contract_id),
+            contract_id=contract_id,
             contract_callable="build_transfer_tx",
             recipient=self.params.transfer_target_address,
             amount=1,
@@ -741,7 +746,7 @@ class TxPreparationBehaviour(
             return None
 
         data_hex = data_bytes.hex()
-        self.context.logger.info(f"ERC20 transfer data is {data_hex}")
+        self.context.logger.info(f"Contract transfer data is {data_hex}")
         return data_hex
 
     def get_multisend_safe_tx_hash(self) -> Generator[None, None, Optional[str]]:
@@ -764,7 +769,7 @@ class TxPreparationBehaviour(
         )
 
         # ERC20 transfer
-        erc20_transfer_data_hex = yield from self.get_erc20_transfer_data()
+        erc20_transfer_data_hex = yield from self.get_contract_transfer_data(str(ERC20.contract_id))
 
         if erc20_transfer_data_hex is None:
             return None
@@ -775,6 +780,21 @@ class TxPreparationBehaviour(
                 "to": self.params.olas_token_address,
                 "value": ZERO_VALUE,
                 "data": bytes.fromhex(erc20_transfer_data_hex),
+            }
+        )
+
+        # ERC721 transfer
+        erc721_transfer_data_hex = yield from self.get_contract_transfer_data(str(ERC721.contract_id))
+
+        if erc721_transfer_data_hex is None:
+            return None
+
+        multi_send_txs.append(
+            {
+                "operation": MultiSendOperation.CALL,
+                "to": self.params.olas_token_address,
+                "value": ZERO_VALUE,
+                "data": bytes.fromhex(erc721_transfer_data_hex),
             }
         )
 
