@@ -108,7 +108,7 @@ class ERC721(Contract):
         recipient: str,
         amount: int,
     ) -> Dict[str, bytes]:
-        """Build an ERC20 transfer."""
+        """Build an ERC721 transfer."""
         contract_instance = cls.get_instance(ledger_api, contract_address)
         checksumed_recipient = ledger_api.api.to_checksum_address(recipient)
         data = contract_instance.encodeABI("transfer", args=(checksumed_recipient, amount))
