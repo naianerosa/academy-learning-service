@@ -38,13 +38,12 @@ from packages.valory.skills.learning_abci.payloads import (
     DataPullPayload,
     DecisionMakingPayload,
     TxPreparationPayload,
-    PingPayload,
     PreTxPreparationPayload
 )
 
 
 class Event(Enum):
-    """LearningAbciApp Events"""
+    """New LearningAbciApp Events"""
 
     DONE = "done"
     ERROR = "error"
@@ -86,16 +85,6 @@ class SynchronizedData(BaseSynchronizedData):
         return self.db.get("erc20_balance", None)
 
     @property
-    def ping_message(self) -> Optional[str]:
-        """Get the coingeko ping message."""
-        return self.db.get("ping_message", None)
-
-    @property
-    def participant_to_ping_round(self) -> DeserializedCollection:
-        """Agent to payload mapping for the PingRound."""
-        return self._get_deserialized("participant_to_ping_round")
-
-    @property
     def participant_to_data_round(self) -> DeserializedCollection:
         """Agent to payload mapping for the DataPullRound."""
         return self._get_deserialized("participant_to_data_round")
@@ -129,16 +118,6 @@ class SynchronizedData(BaseSynchronizedData):
     def tx_submitter(self) -> str:
         """Get the round that submitted a tx to transaction_settlement_abci."""
         return str(self.db.get_strict("tx_submitter"))
-
-class PingRound(CollectSameUntilThresholdRound):
-    """PingRound"""   
-
-    payload_class = PingPayload
-    synchronized_data_class = SynchronizedData
-    done_event = Event.DONE
-    no_majority_event = Event.NO_MAJORITY 
-    collection_key = get_name(SynchronizedData.participant_to_ping_round)
-    selection_key = get_name(SynchronizedData.ping_message)
 
 class DataPullRound(CollectSameUntilThresholdRound):
     """DataPullRound"""
@@ -230,16 +209,11 @@ class FinishedTxPreparationRound(DegenerateRound):
 class LearningAbciApp(AbciApp[Event]):
     """LearningAbciApp"""
 
-    initial_round_cls: AppState = PingRound
+    initial_round_cls: AppState = DataPullRound
     initial_states: Set[AppState] = {
-        PingRound,
+        DataPullRound,
     }
-    transition_function: AbciAppTransitionFunction = {
-        PingRound: {
-            Event.NO_MAJORITY: PingRound,
-            Event.ROUND_TIMEOUT: PingRound,
-            Event.DONE: DataPullRound,
-        },
+    transition_function: AbciAppTransitionFunction = {        
         DataPullRound: {
             Event.NO_MAJORITY: DataPullRound,
             Event.ROUND_TIMEOUT: DataPullRound,
@@ -272,7 +246,7 @@ class LearningAbciApp(AbciApp[Event]):
     event_to_timeout: EventToTimeout = {}
     cross_period_persisted_keys: FrozenSet[str] = frozenset()
     db_pre_conditions: Dict[AppState, Set[str]] = {
-        PingRound: set(),
+        DataPullRound: set(),
     }
     db_post_conditions: Dict[AppState, Set[str]] = {
         FinishedDecisionMakingRound: set(),

@@ -4,25 +4,22 @@ alphabet_in:
 - NO_MAJORITY
 - ROUND_TIMEOUT
 - TRANSACT
-default_start_state: PingRound
+default_start_state: DataPullRound
 final_states:
 - FinishedDecisionMakingRound
 - FinishedTxPreparationRound
 label: LearningAbciApp
 start_states:
-- PingRound
+- DataPullRound
 states:
-- PingRound
+- DataPullRound
 - DataPullRound
 - DecisionMakingRound
 - FinishedDecisionMakingRound
 - FinishedTxPreparationRound
 - TxPreparationRound
 - PreTxPreparationRound
-transition_func:
-    (PingRound, DONE): DataPullRound
-    (PingRound, NO_MAJORITY): PingRound
-    (PingRound, ROUND_TIMEOUT): PingRound
+transition_func:    
     (DataPullRound, DONE): DecisionMakingRound
     (DataPullRound, NO_MAJORITY): DataPullRound
     (DataPullRound, ROUND_TIMEOUT): DataPullRound

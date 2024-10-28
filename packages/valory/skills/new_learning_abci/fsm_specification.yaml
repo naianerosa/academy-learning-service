@@ -1,0 +1,19 @@
+alphabet_in:
+- DONE
+- ERROR
+- NO_MAJORITY
+- ROUND_TIMEOUT
+- TRANSACT
+default_start_state: PingRound
+final_states:
+- FinishedPingRound
+label: NewLearningAbciApp
+start_states:
+- PingRound
+states:
+- PingRound
+- FinishedPingRound
+transition_func:
+    (PingRound, DONE): FinishedPingRound
+    (PingRound, NO_MAJORITY): PingRound
+    (PingRound, ROUND_TIMEOUT): PingRound

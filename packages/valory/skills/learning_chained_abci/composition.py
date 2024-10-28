@@ -19,6 +19,7 @@
 
 """This package contains round behaviours of LearningChainedSkillAbciApp."""
 
+import packages.valory.skills.new_learning_abci.rounds as NewLearningAbci
 import packages.valory.skills.learning_abci.rounds as LearningAbci
 import packages.valory.skills.registration_abci.rounds as RegistrationAbci
 import packages.valory.skills.reset_pause_abci.rounds as ResetAndPauseAbci
@@ -36,12 +37,13 @@ from packages.valory.skills.termination_abci.rounds import (
 
 
 abci_app_transition_mapping: AbciAppTransitionMapping = {
-    RegistrationAbci.FinishedRegistrationRound: LearningAbci.PingRound,
-    LearningAbci.FinishedDecisionMakingRound: ResetAndPauseAbci.ResetAndPauseRound,
+    RegistrationAbci.FinishedRegistrationRound: NewLearningAbci.PingRound,
+    NewLearningAbci.FinishedPingRound: LearningAbci.DataPullRound,
+    LearningAbci.FinishedDecisionMakingRound: LearningAbci.DataPullRound,
     LearningAbci.FinishedTxPreparationRound: TxSettlementAbci.RandomnessTransactionSubmissionRound,
     TxSettlementAbci.FinishedTransactionSubmissionRound: ResetAndPauseAbci.ResetAndPauseRound,
     TxSettlementAbci.FailedRound: TxSettlementAbci.RandomnessTransactionSubmissionRound,
-    ResetAndPauseAbci.FinishedResetAndPauseRound: LearningAbci.PingRound,
+    ResetAndPauseAbci.FinishedResetAndPauseRound: NewLearningAbci.PingRound,
     ResetAndPauseAbci.FinishedResetAndPauseErrorRound: RegistrationAbci.RegistrationRound,
 }
 
@@ -54,6 +56,7 @@ termination_config = BackgroundAppConfig(
 LearningChainedSkillAbciApp = chain(
     (
         RegistrationAbci.AgentRegistrationAbciApp,
+        NewLearningAbci.NewLearningAbciApp,
         LearningAbci.LearningAbciApp,
         TxSettlementAbci.TransactionSubmissionAbciApp,
         ResetAndPauseAbci.ResetPauseAbciApp,
