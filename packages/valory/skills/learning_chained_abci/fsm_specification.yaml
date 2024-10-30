@@ -42,6 +42,7 @@ states:
 - TxPreparationRound
 - ValidateTransactionRound
 - PreTxPreparationRound
+- PingRound
 transition_func:
     (PingRound, DONE): DataPullRound
     (PingRound, NO_MAJORITY): PingRound
